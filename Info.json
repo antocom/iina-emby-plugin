@@ -1,0 +1,29 @@
+{
+  "name": "Emby Browser",
+  "version": "1.2.0",
+  "identifier": "com.plugin.iina.emby",
+  "author": {
+    "name": "Plugin Emby"
+  },
+  "description": "Sfoglia e riproduci contenuti dal tuo server Emby.",
+  "entry": "main.js",
+  "globalEntry": "global.js",
+  "permissions": [
+    "network-request",
+    "show-osd",
+    "file-system"
+  ],
+  "allowedDomains": [
+    "*"
+  ],
+  "sidebarTab": {
+    "name": "Emby",
+    "url": "sidebar.html"
+  },
+  "preferencesPage": "preferences.html",
+  "preferenceDefaults": {
+    "serverUrl": "",
+    "apiKey": "",
+    "userId": ""
+  }
+}

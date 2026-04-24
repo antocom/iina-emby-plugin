@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="it">
+<head><meta charset="UTF-8"/></head>
+<body>
+
+<div class="pref-section">
+  <b>URL Server</b>
+  <div style="margin-top:4px">
+    <input type="text" id="serverUrl" placeholder="http://192.168.1.10:8096" style="width:100%"/>
+  </div>
+  <p class="small secondary pref-help">Indirizzo del tuo server Emby, con porta</p>
+</div>
+
+<div class="pref-section">
+  <b>API Key</b>
+  <div style="margin-top:4px">
+    <input type="text" id="apiKey" placeholder="Chiave API Emby" style="width:100%"/>
+  </div>
+  <p class="small secondary pref-help">Dashboard → Impostazioni avanzate → Chiavi API → Nuova chiave</p>
+</div>
+
+<div class="pref-section">
+  <b>User ID</b>
+  <div style="margin-top:4px">
+    <input type="text" id="userId" placeholder="ID utente" style="width:100%"/>
+  </div>
+  <p class="small secondary pref-help">Dashboard → Utenti → clicca il tuo nome → l'ID è nell'URL della pagina</p>
+</div>
+
+<script>
+var prefs = window.iina.preferences;
+
+// Carica valori salvati tramite callback
+prefs.get("serverUrl", function(v) { document.getElementById("serverUrl").value = v || ""; });
+prefs.get("apiKey",    function(v) { document.getElementById("apiKey").value    = v || ""; });
+prefs.get("userId",    function(v) { document.getElementById("userId").value    = v || ""; });
+
+// Salva ad ogni modifica
+["serverUrl","apiKey","userId"].forEach(function(key) {
+  document.getElementById(key).addEventListener("change", function() {
+    prefs.set(key, this.value);
+    prefs.sync();
+  });
+});
+</script>
+</body>
+</html>

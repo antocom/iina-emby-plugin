@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<title>Emby</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a1e; --surface: #26262c; --border: #3a3a42;
+    --accent: #52b788; --text: #e0e0e6; --muted: #888898; --danger: #e07070;
+    --radius: 8px;
+  }
+  body { background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  header { padding: 10px 12px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0; }
+  header h1 { font-size: 14px; font-weight: 600; }
+  #breadcrumb { display: flex; align-items: center; gap: 4px;
+    padding: 6px 12px; font-size: 11.5px; color: var(--muted);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    overflow-x: auto; white-space: nowrap; min-height: 30px; }
+  .bc-item { cursor: pointer; color: var(--accent); }
+  .bc-item:hover { opacity: .75; }
+  .bc-sep { color: var(--border); }
+  .bc-current { color: var(--muted); }
+  #content { flex: 1; overflow-y: auto; padding: 6px; }
+  .item-row { display: flex; align-items: center; gap: 8px;
+    padding: 7px 9px; border-radius: var(--radius);
+    cursor: pointer; border: 1px solid transparent; transition: background .12s; }
+  .item-row:hover { background: var(--surface); border-color: var(--border); }
+  .item-icon { width: 26px; height: 26px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0; }
+  .icon-folder { background: #2a3a4a; } .icon-movie { background: #2a2a4a; }
+  .icon-episode { background: #2a3a2a; } .icon-series { background: #3a2a4a; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .btn-play { background: none; border: none; color: var(--accent);
+    cursor: pointer; padding: 4px; opacity: 0; transition: opacity .15s; }
+  .item-row:hover .btn-play { opacity: 1; }
+  .state-box { display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 10px; height: 200px;
+    color: var(--muted); font-size: 12px; text-align: center; padding: 20px; }
+  .spinner { width: 22px; height: 22px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { color: var(--danger); }
+</style>
+</head>
+<body>
+<header><h1>📺 Emby Browser</h1></header>
+<div id="breadcrumb"></div>
+<div id="content">
+  <div class="state-box"><div class="spinner"></div><span>Connessione…</span></div>
+</div>
+
+<script>
+var nav = [];
+
+function showLoading() {
+  document.getElementById("content").innerHTML =
+    '<div class="state-box"><div class="spinner"></div><span>Caricamento…</span></div>';
+}
+function showError(msg) {
+  document.getElementById("content").innerHTML =
+    '<div class="state-box error-msg"><span>⚠ ' + msg + '</span></div>';
+}
+function fmtDuration(ticks) {
+  if (!ticks) return "";
+  var s = Math.round(ticks / 1e7), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h > 0 ? h + "h " + m + "m" : m + "m";
+}
+var ICONS = {
+  CollectionFolder:["📁","icon-folder"], Folder:["📂","icon-folder"],
+  Movie:["🎬","icon-movie"], Series:["📺","icon-series"],
+  Season:["🗂️","icon-folder"], Episode:["▶️","icon-episode"]
+};
+var PLAYABLE = ["Movie","Episode"];
+var FOLDER   = ["CollectionFolder","Folder","Series","Season"];
+
+function renderBreadcrumb() {
+  var el = document.getElementById("breadcrumb");
+  if (!nav.length) { el.innerHTML = ""; return; }
+  var parts = [{id:null,name:"Librerie"}].concat(nav);
+  el.innerHTML = parts.map(function(p,i) {
+    var last = i === parts.length - 1;
+    var sep = i < parts.length - 1 ? '<span class="bc-sep"> › </span>' : "";
+    return last
+      ? '<span class="bc-current">' + p.name + '</span>' + sep
+      : '<span class="bc-item" data-idx="' + i + '">' + p.name + '</span>' + sep;
+  }).join("");
+  el.querySelectorAll(".bc-item").forEach(function(el) {
+    el.addEventListener("click", function() {
+      var idx = +el.dataset.idx;
+      if (idx === 0) { nav = []; loadLibraries(); }
+      else { nav = nav.slice(0, idx); loadItems(nav[nav.length-1]); }
+    });
+  });
+}
+
+function renderItems(items) {
+  var content = document.getElementById("content");
+  if (!items.length) {
+    content.innerHTML = '<div class="state-box"><span>Nessun elemento</span></div>';
+    return;
+  }
+  content.innerHTML = items.map(function(item) {
+    var ic = ICONS[item.Type] || ["📄","icon-folder"];
+    var meta = [item.ProductionYear, fmtDuration(item.RunTimeTicks)].filter(Boolean).join(" · ");
+    var playBtn = PLAYABLE.indexOf(item.Type) >= 0
+      ? '<button class="btn-play" data-id="' + item.Id + '" data-title="' + (item.Name||"").replace(/"/g,'&quot;') + '">'
+        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>'
+        + '</button>' : "";
+    return '<div class="item-row" data-id="' + item.Id + '" data-name="' + (item.Name||"").replace(/"/g,'&quot;') + '" data-type="' + item.Type + '">'
+      + '<div class="item-icon ' + ic[1] + '">' + ic[0] + '</div>'
+      + '<div class="item-info"><div class="item-name">' + (item.Name||"") + '</div>'
+      + (meta ? '<div class="item-meta">' + meta + '</div>' : "")
+      + '</div>' + playBtn + '</div>';
+  }).join("");
+
+  content.querySelectorAll(".item-row").forEach(function(row) {
+    row.addEventListener("click", function(e) {
+      if (e.target.closest(".btn-play")) return;
+      var id = row.dataset.id, name = row.dataset.name, type = row.dataset.type;
+      if (FOLDER.indexOf(type) >= 0) { nav.push({id:id,name:name,type:type}); loadItems({id:id,name:name,type:type}); }
+      else if (PLAYABLE.indexOf(type) >= 0) { iina.postMessage("play", {itemId:id, title:name}); }
+    });
+  });
+  content.querySelectorAll(".btn-play").forEach(function(btn) {
+    btn.addEventListener("click", function() {
+      iina.postMessage("play", {itemId: btn.dataset.id, title: btn.dataset.title});
+    });
+  });
+}
+
+function loadLibraries() {
+  nav = []; renderBreadcrumb(); showLoading();
+  iina.postMessage("getLibraries", {});
+}
+
+function loadItems(node) {
+  renderBreadcrumb(); showLoading();
+  if (node.type === "Series") {
+    iina.postMessage("getItems", {parentId: node.id, itemType: "Season"});
+  } else if (node.type === "Season") {
+    var series = nav[nav.length - 2];
+    iina.postMessage("getEpisodes", {seriesId: (series && series.id) || node.id, seasonId: node.id});
+  } else {
+    iina.postMessage("getItems", {parentId: node.id, itemType: ""});
+  }
+}
+
+// ── Messaggi da global.js ─────────────────────────────────────────────────────
+iina.onMessage("config", function(data) {
+  loadLibraries();
+});
+
+iina.onMessage("result", function(data) {
+  renderItems(data.items || []);
+});
+
+iina.onMessage("error", function(data) {
+  showError(data.message || "Errore sconosciuto");
+});
+</script>
+</body>
+</html>

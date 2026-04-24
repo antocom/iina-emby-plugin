@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Emby</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #1a1a1e; --surface: #26262c; --border: #3a3a42;
+    --accent: #52b788; --accent2: #74c69d;
+    --text: #e0e0e6; --muted: #888898; --danger: #e07070;
+    --radius: 8px;
+  }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-size: 13px; height: 100vh;
+    display: flex; flex-direction: column; overflow: hidden;
+  }
+
+  /* Header */
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; background: var(--surface);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+  }
+  header h1 { font-size: 14px; font-weight: 600; }
+  #btn-settings {
+    background: none; border: none; color: var(--muted);
+    cursor: pointer; padding: 3px; border-radius: 4px;
+  }
+  #btn-settings:hover { color: var(--text); }
+
+  /* Breadcrumb */
+  #breadcrumb {
+    display: flex; align-items: center; gap: 4px;
+    padding: 6px 12px; font-size: 11.5px; color: var(--muted);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    overflow-x: auto; white-space: nowrap; min-height: 30px;
+  }
+  .bc-item { cursor: pointer; color: var(--accent2); }
+  .bc-item:hover { opacity: .75; }
+  .bc-sep { color: var(--border); }
+  .bc-current { color: var(--muted); }
+
+  /* Content */
+  #content { flex: 1; overflow-y: auto; padding: 6px; }
+  #content::-webkit-scrollbar { width: 4px; }
+  #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* Item rows */
+  .item-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 7px 9px; border-radius: var(--radius);
+    cursor: pointer; border: 1px solid transparent;
+    transition: background .12s;
+  }
+  .item-row:hover { background: var(--surface); border-color: var(--border); }
+  .item-icon {
+    width: 26px; height: 26px; border-radius: 5px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .icon-folder  { background: #2a3a4a; }
+  .icon-movie   { background: #2a2a4a; }
+  .icon-episode { background: #2a3a2a; }
+  .icon-series  { background: #3a2a4a; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .item-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
+  .btn-play {
+    background: none; border: none; color: var(--accent);
+    cursor: pointer; padding: 4px; opacity: 0; transition: opacity .15s;
+  }
+  .item-row:hover .btn-play { opacity: 1; }
+
+  /* States */
+  .state-box {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 10px; height: 200px;
+    color: var(--muted); font-size: 12px; text-align: center; padding: 20px;
+  }
+  .spinner {
+    width: 22px; height: 22px;
+    border: 2px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin .7s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .error-msg { color: var(--danger); }
+
+  /* Settings */
+  #settings-panel {
+    display: none; flex-direction: column; gap: 13px;
+    padding: 13px 12px; overflow-y: auto; flex: 1;
+  }
+  #settings-panel.open { display: flex; }
+  .field { display: flex; flex-direction: column; gap: 4px; }
+  .field label { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+  .field input {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 6px; color: var(--text); padding: 7px 9px;
+    font-size: 12.5px; outline: none;
+  }
+  .field input:focus { border-color: var(--accent); }
+  .field .hint { font-size: 11px; color: var(--muted); }
+  .btn-row { display: flex; gap: 8px; }
+  .btn-primary {
+    background: var(--accent); color: #0f1f14;
+    border: none; border-radius: 6px; padding: 8px 14px;
+    font-size: 12.5px; font-weight: 600; cursor: pointer;
+  }
+  .btn-secondary {
+    background: var(--surface); color: var(--text);
+    border: 1px solid var(--border); border-radius: 6px;
+    padding: 8px 14px; font-size: 12.5px; cursor: pointer;
+  }
+  .save-result { font-size: 12px; text-align: center; min-height: 16px; }
+  .save-result.ok  { color: var(--accent); }
+  .save-result.err { color: var(--danger); }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📺 Emby</h1>
+  <button id="btn-settings" title="Impostazioni">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="3"/>
+      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+    </svg>
+  </button>
+</header>
+
+<div id="breadcrumb"></div>
+
+<div id="content">
+  <div class="state-box">
+    <span>Configura il server Emby<br>nelle impostazioni ⚙️</span>
+  </div>
+</div>
+
+<div id="settings-panel">
+  <div class="field">
+    <label>URL Server</label>
+    <input id="inp-server" type="url" placeholder="http://192.168.1.10:8096" />
+    <span class="hint">Indirizzo del tuo server Emby (con porta)</span>
+  </div>
+  <div class="field">
+    <label>API Key</label>
+    <input id="inp-apikey" type="password" placeholder="Chiave API Emby" />
+    <span class="hint">Dashboard → Impostazioni avanzate → Chiavi API</span>
+  </div>
+  <div class="field">
+    <label>User ID</label>
+    <input id="inp-userid" type="text" placeholder="ID utente" />
+    <span class="hint">Dashboard → Utenti → clicca utente → ID nell'URL</span>
+  </div>
+  <div class="btn-row">
+    <button class="btn-primary" id="btn-save">Salva</button>
+    <button class="btn-secondary" id="btn-cancel">Annulla</button>
+  </div>
+  <div id="save-result" class="save-result"></div>
+</div>
+
+<script>
+// ── Navigazione ───────────────────────────────────────────────────────────────
+const nav = []; // [{id, name, type}]
+
+function showLoading() {
+  document.getElementById("content").innerHTML =
+    '<div class="state-box"><div class="spinner"></div><span>Caricamento…</span></div>';
+}
+function showError(msg) {
+  document.getElementById("content").innerHTML =
+    `<div class="state-box error-msg"><span>⚠ ${msg}</span></div>`;
+}
+function fmtDuration(ticks) {
+  if (!ticks) return "";
+  const s = Math.round(ticks / 1e7);
+  const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
+  return h > 0 ? `${h}h ${m}m` : `${m}m`;
+}
+const ICONS = {
+  CollectionFolder: ["📁","icon-folder"], Folder: ["📂","icon-folder"],
+  Movie:  ["🎬","icon-movie"], Series: ["📺","icon-series"],
+  Season: ["🗂️","icon-folder"], Episode: ["▶️","icon-episode"],
+};
+function iconFor(type) { return ICONS[type] || ["📄","icon-folder"]; }
+const PLAYABLE = new Set(["Movie","Episode"]);
+const FOLDER   = new Set(["CollectionFolder","Folder","Series","Season"]);
+
+function renderBreadcrumb() {
+  const el = document.getElementById("breadcrumb");
+  if (!nav.length) { el.innerHTML = ""; return; }
+  const parts = [{id:null,name:"Librerie"}, ...nav];
+  el.innerHTML = parts.map((p,i) => {
+    const last = i === parts.length - 1;
+    const sep  = i < parts.length - 1 ? '<span class="bc-sep"> › </span>' : "";
+    return last
+      ? `<span class="bc-current">${p.name}</span>${sep}`
+      : `<span class="bc-item" data-idx="${i}">${p.name}</span>${sep}`;
+  }).join("");
+  el.querySelectorAll(".bc-item").forEach(el => {
+    el.addEventListener("click", () => {
+      const idx = +el.dataset.idx;
+      if (idx === 0) { nav.length = 0; loadLibraries(); }
+      else { nav.splice(idx); loadItems(nav[nav.length-1]); }
+    });
+  });
+}
+
+function renderItems(items) {
+  const content = document.getElementById("content");
+  if (!items.length) {
+    content.innerHTML = '<div class="state-box"><span>Nessun elemento</span></div>';
+    return;
+  }
+  content.innerHTML = items.map(item => {
+    const [emoji, cls] = iconFor(item.Type);
+    const meta = [item.ProductionYear, fmtDuration(item.RunTimeTicks)].filter(Boolean).join(" · ");
+    const playBtn = PLAYABLE.has(item.Type)
+      ? `<button class="btn-play" data-id="${item.Id}" data-title="${(item.Name||"").replace(/"/g,'&quot;')}">
+           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+         </button>` : "";
+    return `
+      <div class="item-row"
+           data-id="${item.Id}"
+           data-name="${(item.Name||"").replace(/"/g,'&quot;')}"
+           data-type="${item.Type}">
+        <div class="item-icon ${cls}">${emoji}</div>
+        <div class="item-info">
+          <div class="item-name">${item.Name||""}</div>
+          ${meta ? `<div class="item-meta">${meta}</div>` : ""}
+        </div>
+        ${playBtn}
+      </div>`;
+  }).join("");
+
+  content.querySelectorAll(".item-row").forEach(row => {
+    row.addEventListener("click", e => {
+      if (e.target.closest(".btn-play")) return;
+      const {id, name, type} = row.dataset;
+      if (FOLDER.has(type)) {
+        nav.push({id, name, type});
+        loadItems({id, name, type});
+      } else if (PLAYABLE.has(type)) {
+        iina.postMessage("play", {itemId: id, title: name});
+      }
+    });
+  });
+
+  content.querySelectorAll(".btn-play").forEach(btn => {
+    btn.addEventListener("click", () => {
+      iina.postMessage("play", {itemId: btn.dataset.id, title: btn.dataset.title});
+    });
+  });
+}
+
+// ── Caricamento ───────────────────────────────────────────────────────────────
+function loadLibraries() {
+  nav.length = 0;
+  renderBreadcrumb();
+  showLoading();
+  iina.postMessage("getLibraries", {});
+}
+
+function loadItems(node) {
+  renderBreadcrumb();
+  showLoading();
+  if (node.type === "Series") {
+    iina.postMessage("getItems", {parentId: node.id, itemType: "Season"});
+  } else if (node.type === "Season") {
+    const series = nav[nav.length - 2];
+    iina.postMessage("getEpisodes", {seriesId: series?.id || node.id, seasonId: node.id});
+  } else {
+    iina.postMessage("getItems", {parentId: node.id, itemType: ""});
+  }
+}
+
+// ── Messaggi da main.js ───────────────────────────────────────────────────────
+iina.onMessage("libraries", data => renderItems(data));
+iina.onMessage("items",     data => renderItems(data));
+iina.onMessage("episodes",  data => renderItems(data));
+iina.onMessage("error",     data => showError(data.message));
+iina.onMessage("config",    data => {
+  document.getElementById("inp-server").value = data.serverUrl || "";
+  document.getElementById("inp-apikey").value = data.apiKey    || "";
+  document.getElementById("inp-userid").value = data.userId    || "";
+});
+iina.onMessage("configSaved", () => {
+  const el = document.getElementById("save-result");
+  el.textContent = "✓ Salvato"; el.className = "save-result ok";
+  setTimeout(closeSettings, 900);
+});
+
+// ── Settings panel ────────────────────────────────────────────────────────────
+function openSettings() {
+  document.getElementById("settings-panel").classList.add("open");
+  document.getElementById("content").style.display = "none";
+  document.getElementById("breadcrumb").style.display = "none";
+  document.getElementById("save-result").textContent = "";
+  iina.postMessage("getConfig", {});
+}
+function closeSettings() {
+  document.getElementById("settings-panel").classList.remove("open");
+  document.getElementById("content").style.display = "";
+  document.getElementById("breadcrumb").style.display = "";
+}
+
+document.getElementById("btn-settings").addEventListener("click", openSettings);
+document.getElementById("btn-cancel").addEventListener("click", closeSettings);
+document.getElementById("btn-save").addEventListener("click", () => {
+  const serverUrl = document.getElementById("inp-server").value.trim();
+  const apiKey    = document.getElementById("inp-apikey").value.trim();
+  const userId    = document.getElementById("inp-userid").value.trim();
+  const el        = document.getElementById("save-result");
+  if (!serverUrl || !apiKey || !userId) {
+    el.textContent = "⚠ Compila tutti i campi"; el.className = "save-result err";
+    return;
+  }
+  iina.postMessage("saveConfig", {serverUrl, apiKey, userId});
+});
+
+// ── Avvio ─────────────────────────────────────────────────────────────────────
+loadLibraries();
+</script>
+</body>
+</html>
