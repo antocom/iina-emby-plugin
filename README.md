@@ -1,3 +1,4 @@
+[![Ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/ctrlaltdementia)
 # Emby Browser — IINA Plugin
 
 A plugin for [IINA](https://iina.io) that lets you browse and play content from your [Emby](https://emby.media) media server directly from IINA, without opening the Emby web interface.
