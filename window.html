@@ -2,62 +2,187 @@
 <html lang="it">
 <head>
 <meta charset="UTF-8" />
-<title>Emby</title>
+<title>Emby Browser</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #1a1a1e; --surface: #26262c; --border: #3a3a42;
-    --accent: #52b788; --text: #e0e0e6; --muted: #888898; --danger: #e07070;
-    --radius: 8px;
+    --bg: #121216; --surface: #1c1c22; --surface2: #26262e;
+    --border: #2e2e38; --border-light: #3a3a46;
+    --accent: #52b788; --accent2: #74c69d;
+    --text: #e8e8ee; --text-secondary: #b0b0be; --muted: #6e6e82;
+    --danger: #e07070;
+    --radius: 10px; --radius-sm: 6px;
   }
-  body { background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    font-size: 13px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
-  header { padding: 10px 12px; background: var(--surface);
-    border-bottom: 1px solid var(--border); flex-shrink: 0; }
-  header h1 { font-size: 14px; font-weight: 600; }
-  #breadcrumb { display: flex; align-items: center; gap: 4px;
-    padding: 6px 12px; font-size: 11.5px; color: var(--muted);
-    border-bottom: 1px solid var(--border); flex-shrink: 0;
-    overflow-x: auto; white-space: nowrap; min-height: 30px; }
-  .bc-item { cursor: pointer; color: var(--accent); }
-  .bc-item:hover { opacity: .75; }
-  .bc-sep { color: var(--border); }
-  .bc-current { color: var(--muted); }
-  #content { flex: 1; overflow-y: auto; padding: 6px; }
-  .item-row { display: flex; align-items: center; gap: 8px;
-    padding: 7px 9px; border-radius: var(--radius);
-    cursor: pointer; border: 1px solid transparent; transition: background .12s; }
-  .item-row:hover { background: var(--surface); border-color: var(--border); }
-  .item-icon { width: 26px; height: 26px; border-radius: 5px;
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+    font-size: 13px; height: 100vh;
+    display: flex; flex-direction: column; overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Header ──────────────────────────────────────────── */
+  header {
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; flex-shrink: 0; }
-  .icon-folder { background: #2a3a4a; } .icon-movie { background: #2a2a4a; }
-  .icon-episode { background: #2a3a2a; } .icon-series { background: #3a2a4a; }
-  .item-info { flex: 1; min-width: 0; }
-  .item-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .item-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
-  .btn-play { background: none; border: none; color: var(--accent);
-    cursor: pointer; padding: 4px; opacity: 0; transition: opacity .15s; }
-  .item-row:hover .btn-play { opacity: 1; }
-  .state-box { display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 10px; height: 200px;
-    color: var(--muted); font-size: 12px; text-align: center; padding: 20px; }
-  .spinner { width: 22px; height: 22px;
-    border: 2px solid var(--border); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .7s linear infinite; }
+    padding: 14px 14px 12px; flex-shrink: 0;
+    background: linear-gradient(180deg, var(--surface2) 0%, var(--surface) 100%);
+    border-bottom: 1px solid var(--border);
+  }
+  header h1 {
+    font-size: 16px; font-weight: 700; letter-spacing: -0.3px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+
+  /* ── Breadcrumb ──────────────────────────────────────── */
+  #breadcrumb {
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 14px; font-size: 11.5px; color: var(--muted);
+    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    overflow-x: auto; white-space: nowrap; min-height: 32px;
+    background: var(--bg);
+  }
+  #breadcrumb:empty { display: none; }
+  .bc-item { cursor: pointer; color: var(--accent2); transition: opacity 0.12s; }
+  .bc-item:hover { opacity: 0.7; }
+  .bc-sep { color: var(--border-light); margin: 0 1px; }
+  .bc-current { color: var(--text-secondary); font-weight: 500; }
+
+  /* ── Content ─────────────────────────────────────────── */
+  #content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  #content::-webkit-scrollbar { width: 5px; }
+  #content::-webkit-scrollbar-track { background: transparent; }
+  #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  #content::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
+
+  /* ── Card Grid ───────────────────────────────────────── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .item-card {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    border: 1px solid var(--border);
+  }
+  .item-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    border-color: var(--accent);
+  }
+  .item-card:active { transform: translateY(-1px); }
+
+  /* ── Poster ──────────────────────────────────────────── */
+  .card-poster {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .card-poster img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: transform 0.3s ease;
+  }
+  .item-card:hover .card-poster img { transform: scale(1.05); }
+  .card-poster.no-img img { display: none; }
+
+  .card-fallback {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    font-size: 32px;
+    background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 50%, #2a2a3e 100%);
+    color: var(--muted);
+  }
+  .card-poster.no-img .card-fallback { display: flex; }
+
+  /* ── Info Overlay ────────────────────────────────────── */
+  .card-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 28px 9px 9px;
+    background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 55%, transparent 100%);
+  }
+  .card-title {
+    font-size: 11.5px; font-weight: 600; line-height: 1.35;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-meta {
+    font-size: 10px; color: rgba(255,255,255,0.55);
+    margin-top: 3px;
+  }
+
+  /* ── Play Overlay ────────────────────────────────────── */
+  .card-play {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.75);
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    box-shadow: 0 3px 12px rgba(82,183,136,0.45);
+    pointer-events: none;
+  }
+  .item-card:hover .card-play {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  /* ── States ──────────────────────────────────────────── */
+  .state-box {
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 12px; height: 240px;
+    color: var(--muted); font-size: 12.5px; text-align: center; padding: 24px;
+  }
+  .spinner {
+    width: 24px; height: 24px;
+    border: 2.5px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
+  }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error-msg { color: var(--danger); }
 </style>
 </head>
 <body>
-<header><h1>📺 Emby Browser</h1></header>
+<header><h1>Emby Browser</h1><span style="font-size:9px;color:var(--muted);margin-left:8px">v2.0.3</span></header>
 <div id="breadcrumb"></div>
 <div id="content">
   <div class="state-box"><div class="spinner"></div><span>Connessione…</span></div>
 </div>
 
 <script>
+// ── Config & Image URL ────────────────────────────────────────────────────────
+var embyConfig = {};
+
+function getImageUrl(item, maxH) {
+  if (!embyConfig.serverUrl || !embyConfig.apiKey) return "";
+  if (!item || !item.Id) return "";
+  var base = embyConfig.serverUrl.replace(/\/$/, "");
+  var url = base + "/Items/" + item.Id + "/Images/Primary"
+    + "?maxHeight=" + (maxH || 400)
+    + "&quality=90"
+    + "&api_key=" + encodeURIComponent(embyConfig.apiKey);
+  if (item.ImageTags && item.ImageTags.Primary) {
+    url += "&tag=" + item.ImageTags.Primary;
+  }
+  return url;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
 var nav = [];
 
 function showLoading() {
@@ -66,28 +191,31 @@ function showLoading() {
 }
 function showError(msg) {
   document.getElementById("content").innerHTML =
-    '<div class="state-box error-msg"><span>⚠ ' + msg + '</span></div>';
+    '<div class="state-box error-msg"><span>⚠ ' + msg + '</span><br><small style="color:#6e6e82;margin-top:8px">v2.0.3</small></div>';
 }
 function fmtDuration(ticks) {
   if (!ticks) return "";
   var s = Math.round(ticks / 1e7), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
   return h > 0 ? h + "h " + m + "m" : m + "m";
 }
-var ICONS = {
-  CollectionFolder:["📁","icon-folder"], Folder:["📂","icon-folder"],
-  Movie:["🎬","icon-movie"], Series:["📺","icon-series"],
-  Season:["🗂️","icon-folder"], Episode:["▶️","icon-episode"]
-};
-var PLAYABLE = ["Movie","Episode"];
-var FOLDER   = ["CollectionFolder","Folder","Series","Season"];
 
+var ICONS = {
+  CollectionFolder: "📁", Folder: "📂",
+  Movie: "🎬", Series: "📺",
+  Season: "🗂️", Episode: "▶️",
+};
+function iconFor(type) { return ICONS[type] || "📄"; }
+var PLAYABLE = ["Movie", "Episode"];
+var FOLDER   = ["CollectionFolder", "Folder", "Series", "Season"];
+
+// ── Breadcrumb ────────────────────────────────────────────────────────────────
 function renderBreadcrumb() {
   var el = document.getElementById("breadcrumb");
   if (!nav.length) { el.innerHTML = ""; return; }
-  var parts = [{id:null,name:"Librerie"}].concat(nav);
-  el.innerHTML = parts.map(function(p,i) {
+  var parts = [{id: null, name: "Librerie"}].concat(nav);
+  el.innerHTML = parts.map(function(p, i) {
     var last = i === parts.length - 1;
-    var sep = i < parts.length - 1 ? '<span class="bc-sep"> › </span>' : "";
+    var sep  = i < parts.length - 1 ? '<span class="bc-sep"> › </span>' : "";
     return last
       ? '<span class="bc-current">' + p.name + '</span>' + sep
       : '<span class="bc-item" data-idx="' + i + '">' + p.name + '</span>' + sep;
@@ -96,46 +224,51 @@ function renderBreadcrumb() {
     el.addEventListener("click", function() {
       var idx = +el.dataset.idx;
       if (idx === 0) { nav = []; loadLibraries(); }
-      else { nav = nav.slice(0, idx); loadItems(nav[nav.length-1]); }
+      else { nav = nav.slice(0, idx); loadItems(nav[nav.length - 1]); }
     });
   });
 }
 
+// ── Render Items ──────────────────────────────────────────────────────────────
 function renderItems(items) {
   var content = document.getElementById("content");
   if (!items.length) {
     content.innerHTML = '<div class="state-box"><span>Nessun elemento</span></div>';
     return;
   }
-  content.innerHTML = items.map(function(item) {
-    var ic = ICONS[item.Type] || ["📄","icon-folder"];
+  content.innerHTML = '<div class="card-grid">' + items.map(function(item) {
+    var imgUrl = getImageUrl(item);
     var meta = [item.ProductionYear, fmtDuration(item.RunTimeTicks)].filter(Boolean).join(" · ");
-    var playBtn = PLAYABLE.indexOf(item.Type) >= 0
-      ? '<button class="btn-play" data-id="' + item.Id + '" data-title="' + (item.Name||"").replace(/"/g,'&quot;') + '">'
-        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>'
-        + '</button>' : "";
-    return '<div class="item-row" data-id="' + item.Id + '" data-name="' + (item.Name||"").replace(/"/g,'&quot;') + '" data-type="' + item.Type + '">'
-      + '<div class="item-icon ' + ic[1] + '">' + ic[0] + '</div>'
-      + '<div class="item-info"><div class="item-name">' + (item.Name||"") + '</div>'
-      + (meta ? '<div class="item-meta">' + meta + '</div>' : "")
-      + '</div>' + playBtn + '</div>';
-  }).join("");
+    var emoji = iconFor(item.Type);
+    var isPlayable = PLAYABLE.indexOf(item.Type) >= 0;
+    var safeName = (item.Name || "").replace(/"/g, "&quot;");
+    return '<div class="item-card" data-id="' + item.Id + '" data-name="' + safeName + '" data-type="' + item.Type + '">'
+      + '<div class="card-poster' + (imgUrl ? '' : ' no-img') + '">'
+      + (imgUrl ? '<img src="' + imgUrl + '" loading="lazy" alt="' + safeName + '" onerror="this.parentElement.classList.add(\'no-img\')"/>' : '')
+      + '<div class="card-fallback">' + emoji + '</div>'
+      + '</div>'
+      + '<div class="card-info">'
+      + '<div class="card-title">' + (item.Name || '') + '</div>'
+      + (meta ? '<div class="card-meta">' + meta + '</div>' : '')
+      + '</div>'
+      + (isPlayable ? '<div class="card-play"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg></div>' : '')
+      + '</div>';
+  }).join('') + '</div>';
 
-  content.querySelectorAll(".item-row").forEach(function(row) {
-    row.addEventListener("click", function(e) {
-      if (e.target.closest(".btn-play")) return;
-      var id = row.dataset.id, name = row.dataset.name, type = row.dataset.type;
-      if (FOLDER.indexOf(type) >= 0) { nav.push({id:id,name:name,type:type}); loadItems({id:id,name:name,type:type}); }
-      else if (PLAYABLE.indexOf(type) >= 0) { iina.postMessage("play", {itemId:id, title:name}); }
-    });
-  });
-  content.querySelectorAll(".btn-play").forEach(function(btn) {
-    btn.addEventListener("click", function() {
-      iina.postMessage("play", {itemId: btn.dataset.id, title: btn.dataset.title});
+  content.querySelectorAll(".item-card").forEach(function(card) {
+    card.addEventListener("click", function() {
+      var id = card.dataset.id, name = card.dataset.name, type = card.dataset.type;
+      if (FOLDER.indexOf(type) >= 0) {
+        nav.push({id: id, name: name, type: type});
+        loadItems({id: id, name: name, type: type});
+      } else if (PLAYABLE.indexOf(type) >= 0) {
+        iina.postMessage("play", {itemId: id, title: name});
+      }
     });
   });
 }
 
+// ── Loading ───────────────────────────────────────────────────────────────────
 function loadLibraries() {
   nav = []; renderBreadcrumb(); showLoading();
   iina.postMessage("getLibraries", {});
@@ -153,8 +286,9 @@ function loadItems(node) {
   }
 }
 
-// ── Messaggi da global.js ─────────────────────────────────────────────────────
+// ── Messages from global.js ──────────────────────────────────────────────────
 iina.onMessage("config", function(data) {
+  embyConfig = data;
   loadLibraries();
 });
 

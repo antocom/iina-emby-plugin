@@ -7,114 +7,195 @@
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
-    --bg: #1a1a1e; --surface: #26262c; --border: #3a3a42;
+    --bg: #121216; --surface: #1c1c22; --surface2: #26262e;
+    --border: #2e2e38; --border-light: #3a3a46;
     --accent: #52b788; --accent2: #74c69d;
-    --text: #e0e0e6; --muted: #888898; --danger: #e07070;
-    --radius: 8px;
+    --text: #e8e8ee; --text-secondary: #b0b0be; --muted: #6e6e82;
+    --danger: #e07070;
+    --radius: 10px; --radius-sm: 6px;
   }
   body {
     background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
     font-size: 13px; height: 100vh;
     display: flex; flex-direction: column; overflow: hidden;
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Header */
+  /* ── Header ──────────────────────────────────────────── */
   header {
     display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 12px; background: var(--surface);
-    border-bottom: 1px solid var(--border); flex-shrink: 0;
+    padding: 14px 14px 12px; flex-shrink: 0;
+    background: linear-gradient(180deg, var(--surface2) 0%, var(--surface) 100%);
+    border-bottom: 1px solid var(--border);
   }
-  header h1 { font-size: 14px; font-weight: 600; }
+  header h1 {
+    font-size: 16px; font-weight: 700; letter-spacing: -0.3px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
   #btn-settings {
     background: none; border: none; color: var(--muted);
-    cursor: pointer; padding: 3px; border-radius: 4px;
+    cursor: pointer; padding: 4px; border-radius: var(--radius-sm);
+    transition: color 0.15s, background 0.15s;
   }
-  #btn-settings:hover { color: var(--text); }
+  #btn-settings:hover { color: var(--text); background: var(--surface2); }
 
-  /* Breadcrumb */
+  /* ── Breadcrumb ──────────────────────────────────────── */
   #breadcrumb {
     display: flex; align-items: center; gap: 4px;
-    padding: 6px 12px; font-size: 11.5px; color: var(--muted);
+    padding: 8px 14px; font-size: 11.5px; color: var(--muted);
     border-bottom: 1px solid var(--border); flex-shrink: 0;
-    overflow-x: auto; white-space: nowrap; min-height: 30px;
+    overflow-x: auto; white-space: nowrap; min-height: 32px;
+    background: var(--bg);
   }
-  .bc-item { cursor: pointer; color: var(--accent2); }
-  .bc-item:hover { opacity: .75; }
-  .bc-sep { color: var(--border); }
-  .bc-current { color: var(--muted); }
+  #breadcrumb:empty { display: none; }
+  .bc-item { cursor: pointer; color: var(--accent2); transition: opacity 0.12s; }
+  .bc-item:hover { opacity: 0.7; }
+  .bc-sep { color: var(--border-light); margin: 0 1px; }
+  .bc-current { color: var(--text-secondary); font-weight: 500; }
 
-  /* Content */
-  #content { flex: 1; overflow-y: auto; padding: 6px; }
-  #content::-webkit-scrollbar { width: 4px; }
-  #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  /* ── Content ─────────────────────────────────────────── */
+  #content { flex: 1; overflow-y: auto; overflow-x: hidden; }
+  #content::-webkit-scrollbar { width: 5px; }
+  #content::-webkit-scrollbar-track { background: transparent; }
+  #content::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  #content::-webkit-scrollbar-thumb:hover { background: var(--border-light); }
 
-  /* Item rows */
-  .item-row {
-    display: flex; align-items: center; gap: 8px;
-    padding: 7px 9px; border-radius: var(--radius);
-    cursor: pointer; border: 1px solid transparent;
-    transition: background .12s;
+  /* ── Card Grid ───────────────────────────────────────── */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    padding: 10px;
   }
-  .item-row:hover { background: var(--surface); border-color: var(--border); }
-  .item-icon {
-    width: 26px; height: 26px; border-radius: 5px;
+
+  .item-card {
+    position: relative;
+    border-radius: var(--radius);
+    overflow: hidden;
+    background: var(--surface);
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    border: 1px solid var(--border);
+  }
+  .item-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.4);
+    border-color: var(--accent);
+  }
+  .item-card:active { transform: translateY(-1px); }
+
+  /* ── Poster ──────────────────────────────────────────── */
+  .card-poster {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    background: var(--surface);
+  }
+  .card-poster img {
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    transition: transform 0.3s ease;
+  }
+  .item-card:hover .card-poster img { transform: scale(1.05); }
+  .card-poster.no-img img { display: none; }
+
+  .card-fallback {
+    position: absolute; inset: 0;
+    display: none;
+    align-items: center; justify-content: center;
+    font-size: 32px;
+    background: linear-gradient(145deg, var(--surface) 0%, var(--surface2) 50%, #2a2a3e 100%);
+    color: var(--muted);
+  }
+  .card-poster.no-img .card-fallback { display: flex; }
+
+  /* ── Info Overlay ────────────────────────────────────── */
+  .card-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 28px 9px 9px;
+    background: linear-gradient(to top, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.5) 55%, transparent 100%);
+  }
+  .card-title {
+    font-size: 11.5px; font-weight: 600; line-height: 1.35;
+    color: #fff;
+    display: -webkit-box;
+    -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .card-meta {
+    font-size: 10px; color: rgba(255,255,255,0.55);
+    margin-top: 3px;
+  }
+
+  /* ── Play Overlay ────────────────────────────────────── */
+  .card-play {
+    position: absolute; top: 50%; left: 50%;
+    transform: translate(-50%, -50%) scale(0.75);
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: #fff;
     display: flex; align-items: center; justify-content: center;
-    font-size: 14px; flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    box-shadow: 0 3px 12px rgba(82,183,136,0.45);
+    pointer-events: none;
   }
-  .icon-folder  { background: #2a3a4a; }
-  .icon-movie   { background: #2a2a4a; }
-  .icon-episode { background: #2a3a2a; }
-  .icon-series  { background: #3a2a4a; }
-  .item-info { flex: 1; min-width: 0; }
-  .item-name { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .item-meta { font-size: 11px; color: var(--muted); margin-top: 1px; }
-  .btn-play {
-    background: none; border: none; color: var(--accent);
-    cursor: pointer; padding: 4px; opacity: 0; transition: opacity .15s;
+  .item-card:hover .card-play {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
   }
-  .item-row:hover .btn-play { opacity: 1; }
 
-  /* States */
+  /* ── States ──────────────────────────────────────────── */
   .state-box {
     display: flex; flex-direction: column; align-items: center;
-    justify-content: center; gap: 10px; height: 200px;
-    color: var(--muted); font-size: 12px; text-align: center; padding: 20px;
+    justify-content: center; gap: 12px; height: 240px;
+    color: var(--muted); font-size: 12.5px; text-align: center; padding: 24px;
   }
   .spinner {
-    width: 22px; height: 22px;
-    border: 2px solid var(--border); border-top-color: var(--accent);
-    border-radius: 50%; animation: spin .7s linear infinite;
+    width: 24px; height: 24px;
+    border: 2.5px solid var(--border); border-top-color: var(--accent);
+    border-radius: 50%; animation: spin 0.7s linear infinite;
   }
   @keyframes spin { to { transform: rotate(360deg); } }
   .error-msg { color: var(--danger); }
 
-  /* Settings */
+  /* ── Settings Panel ──────────────────────────────────── */
   #settings-panel {
-    display: none; flex-direction: column; gap: 13px;
-    padding: 13px 12px; overflow-y: auto; flex: 1;
+    display: none; flex-direction: column; gap: 14px;
+    padding: 16px 14px; overflow-y: auto; flex: 1;
   }
   #settings-panel.open { display: flex; }
-  .field { display: flex; flex-direction: column; gap: 4px; }
-  .field label { font-size: 11.5px; color: var(--muted); font-weight: 500; }
+  .field { display: flex; flex-direction: column; gap: 5px; }
+  .field label {
+    font-size: 11.5px; color: var(--muted); font-weight: 600;
+    text-transform: uppercase; letter-spacing: 0.3px;
+  }
   .field input {
     background: var(--surface); border: 1px solid var(--border);
-    border-radius: 6px; color: var(--text); padding: 7px 9px;
-    font-size: 12.5px; outline: none;
+    border-radius: var(--radius-sm); color: var(--text); padding: 9px 11px;
+    font-size: 12.5px; outline: none; transition: border-color 0.15s;
   }
   .field input:focus { border-color: var(--accent); }
-  .field .hint { font-size: 11px; color: var(--muted); }
-  .btn-row { display: flex; gap: 8px; }
+  .field .hint { font-size: 10.5px; color: var(--muted); }
+  .btn-row { display: flex; gap: 8px; margin-top: 4px; }
   .btn-primary {
     background: var(--accent); color: #0f1f14;
-    border: none; border-radius: 6px; padding: 8px 14px;
+    border: none; border-radius: var(--radius-sm); padding: 9px 16px;
     font-size: 12.5px; font-weight: 600; cursor: pointer;
+    transition: opacity 0.15s;
   }
+  .btn-primary:hover { opacity: 0.85; }
   .btn-secondary {
-    background: var(--surface); color: var(--text);
-    border: 1px solid var(--border); border-radius: 6px;
-    padding: 8px 14px; font-size: 12.5px; cursor: pointer;
+    background: var(--surface2); color: var(--text);
+    border: 1px solid var(--border); border-radius: var(--radius-sm);
+    padding: 9px 16px; font-size: 12.5px; cursor: pointer;
+    transition: background 0.15s;
   }
+  .btn-secondary:hover { background: var(--surface); }
   .save-result { font-size: 12px; text-align: center; min-height: 16px; }
   .save-result.ok  { color: var(--accent); }
   .save-result.err { color: var(--danger); }
@@ -123,9 +204,9 @@
 <body>
 
 <header>
-  <h1>📺 Emby</h1>
+  <h1>Emby</h1>
   <button id="btn-settings" title="Impostazioni">
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
       <circle cx="12" cy="12" r="3"/>
       <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
     </svg>
@@ -164,8 +245,26 @@
 </div>
 
 <script>
-// ── Navigazione ───────────────────────────────────────────────────────────────
-const nav = []; // [{id, name, type}]
+// ── Config & Image URL ────────────────────────────────────────────────────────
+let embyConfig = {};
+let lastItems = null;
+
+function getImageUrl(item, maxH) {
+  if (!embyConfig.serverUrl || !embyConfig.apiKey) return "";
+  if (!item || !item.Id) return "";
+  const base = embyConfig.serverUrl.replace(/\/$/, "");
+  var url = base + "/Items/" + item.Id + "/Images/Primary"
+    + "?maxHeight=" + (maxH || 400)
+    + "&quality=90"
+    + "&api_key=" + encodeURIComponent(embyConfig.apiKey);
+  if (item.ImageTags && item.ImageTags.Primary) {
+    url += "&tag=" + item.ImageTags.Primary;
+  }
+  return url;
+}
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+const nav = [];
 
 function showLoading() {
   document.getElementById("content").innerHTML =
@@ -173,7 +272,7 @@ function showLoading() {
 }
 function showError(msg) {
   document.getElementById("content").innerHTML =
-    `<div class="state-box error-msg"><span>⚠ ${msg}</span></div>`;
+    `<div class="state-box error-msg"><span>⚠ ${msg}</span><br><small style="color:#6e6e82;margin-top:8px">v2.0.3</small></div>`;
 }
 function fmtDuration(ticks) {
   if (!ticks) return "";
@@ -181,20 +280,22 @@ function fmtDuration(ticks) {
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
   return h > 0 ? `${h}h ${m}m` : `${m}m`;
 }
-const ICONS = {
-  CollectionFolder: ["📁","icon-folder"], Folder: ["📂","icon-folder"],
-  Movie:  ["🎬","icon-movie"], Series: ["📺","icon-series"],
-  Season: ["🗂️","icon-folder"], Episode: ["▶️","icon-episode"],
-};
-function iconFor(type) { return ICONS[type] || ["📄","icon-folder"]; }
-const PLAYABLE = new Set(["Movie","Episode"]);
-const FOLDER   = new Set(["CollectionFolder","Folder","Series","Season"]);
 
+const ICONS = {
+  CollectionFolder: "📁", Folder: "📂",
+  Movie: "🎬", Series: "📺",
+  Season: "🗂️", Episode: "▶️",
+};
+function iconFor(type) { return ICONS[type] || "📄"; }
+const PLAYABLE = new Set(["Movie", "Episode"]);
+const FOLDER   = new Set(["CollectionFolder", "Folder", "Series", "Season"]);
+
+// ── Breadcrumb ────────────────────────────────────────────────────────────────
 function renderBreadcrumb() {
   const el = document.getElementById("breadcrumb");
   if (!nav.length) { el.innerHTML = ""; return; }
-  const parts = [{id:null,name:"Librerie"}, ...nav];
-  el.innerHTML = parts.map((p,i) => {
+  const parts = [{ id: null, name: "Librerie" }, ...nav];
+  el.innerHTML = parts.map((p, i) => {
     const last = i === parts.length - 1;
     const sep  = i < parts.length - 1 ? '<span class="bc-sep"> › </span>' : "";
     return last
@@ -205,59 +306,52 @@ function renderBreadcrumb() {
     el.addEventListener("click", () => {
       const idx = +el.dataset.idx;
       if (idx === 0) { nav.length = 0; loadLibraries(); }
-      else { nav.splice(idx); loadItems(nav[nav.length-1]); }
+      else { nav.splice(idx); loadItems(nav[nav.length - 1]); }
     });
   });
 }
 
+// ── Render Items ──────────────────────────────────────────────────────────────
 function renderItems(items) {
   const content = document.getElementById("content");
   if (!items.length) {
     content.innerHTML = '<div class="state-box"><span>Nessun elemento</span></div>';
     return;
   }
-  content.innerHTML = items.map(item => {
-    const [emoji, cls] = iconFor(item.Type);
+  content.innerHTML = '<div class="card-grid">' + items.map(item => {
+    const imgUrl = getImageUrl(item);
     const meta = [item.ProductionYear, fmtDuration(item.RunTimeTicks)].filter(Boolean).join(" · ");
-    const playBtn = PLAYABLE.has(item.Type)
-      ? `<button class="btn-play" data-id="${item.Id}" data-title="${(item.Name||"").replace(/"/g,'&quot;')}">
-           <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-         </button>` : "";
+    const emoji = iconFor(item.Type);
+    const isPlayable = PLAYABLE.has(item.Type);
+    const safeName = (item.Name || "").replace(/"/g, "&quot;");
     return `
-      <div class="item-row"
-           data-id="${item.Id}"
-           data-name="${(item.Name||"").replace(/"/g,'&quot;')}"
-           data-type="${item.Type}">
-        <div class="item-icon ${cls}">${emoji}</div>
-        <div class="item-info">
-          <div class="item-name">${item.Name||""}</div>
-          ${meta ? `<div class="item-meta">${meta}</div>` : ""}
+      <div class="item-card" data-id="${item.Id}" data-name="${safeName}" data-type="${item.Type}">
+        <div class="card-poster${imgUrl ? "" : " no-img"}">
+          ${imgUrl ? `<img src="${imgUrl}" loading="lazy" alt="${safeName}" onerror="this.parentElement.classList.add('no-img')"/>` : ""}
+          <div class="card-fallback">${emoji}</div>
         </div>
-        ${playBtn}
+        <div class="card-info">
+          <div class="card-title">${item.Name || ""}</div>
+          ${meta ? `<div class="card-meta">${meta}</div>` : ""}
+        </div>
+        ${isPlayable ? '<div class="card-play"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><polygon points="6,3 20,12 6,21"/></svg></div>' : ""}
       </div>`;
-  }).join("");
+  }).join("") + "</div>";
 
-  content.querySelectorAll(".item-row").forEach(row => {
-    row.addEventListener("click", e => {
-      if (e.target.closest(".btn-play")) return;
-      const {id, name, type} = row.dataset;
+  content.querySelectorAll(".item-card").forEach(card => {
+    card.addEventListener("click", () => {
+      const { id, name, type } = card.dataset;
       if (FOLDER.has(type)) {
-        nav.push({id, name, type});
-        loadItems({id, name, type});
+        nav.push({ id, name, type });
+        loadItems({ id, name, type });
       } else if (PLAYABLE.has(type)) {
-        iina.postMessage("play", {itemId: id, title: name});
+        iina.postMessage("play", { itemId: id, title: name });
       }
-    });
-  });
-
-  content.querySelectorAll(".btn-play").forEach(btn => {
-    btn.addEventListener("click", () => {
-      iina.postMessage("play", {itemId: btn.dataset.id, title: btn.dataset.title});
     });
   });
 }
 
-// ── Caricamento ───────────────────────────────────────────────────────────────
+// ── Loading ───────────────────────────────────────────────────────────────────
 function loadLibraries() {
   nav.length = 0;
   renderBreadcrumb();
@@ -269,24 +363,26 @@ function loadItems(node) {
   renderBreadcrumb();
   showLoading();
   if (node.type === "Series") {
-    iina.postMessage("getItems", {parentId: node.id, itemType: "Season"});
+    iina.postMessage("getItems", { parentId: node.id, itemType: "Season" });
   } else if (node.type === "Season") {
     const series = nav[nav.length - 2];
-    iina.postMessage("getEpisodes", {seriesId: series?.id || node.id, seasonId: node.id});
+    iina.postMessage("getEpisodes", { seriesId: series?.id || node.id, seasonId: node.id });
   } else {
-    iina.postMessage("getItems", {parentId: node.id, itemType: ""});
+    iina.postMessage("getItems", { parentId: node.id, itemType: "" });
   }
 }
 
-// ── Messaggi da main.js ───────────────────────────────────────────────────────
-iina.onMessage("libraries", data => renderItems(data));
-iina.onMessage("items",     data => renderItems(data));
-iina.onMessage("episodes",  data => renderItems(data));
+// ── Messages from main.js ─────────────────────────────────────────────────────
+iina.onMessage("libraries", data => { lastItems = data; renderItems(data); });
+iina.onMessage("items",     data => { lastItems = data; renderItems(data); });
+iina.onMessage("episodes",  data => { lastItems = data; renderItems(data); });
 iina.onMessage("error",     data => showError(data.message));
 iina.onMessage("config",    data => {
+  embyConfig = data;
   document.getElementById("inp-server").value = data.serverUrl || "";
   document.getElementById("inp-apikey").value = data.apiKey    || "";
   document.getElementById("inp-userid").value = data.userId    || "";
+  if (lastItems) renderItems(lastItems);
 });
 iina.onMessage("configSaved", () => {
   const el = document.getElementById("save-result");
@@ -319,10 +415,11 @@ document.getElementById("btn-save").addEventListener("click", () => {
     el.textContent = "⚠ Compila tutti i campi"; el.className = "save-result err";
     return;
   }
-  iina.postMessage("saveConfig", {serverUrl, apiKey, userId});
+  iina.postMessage("saveConfig", { serverUrl, apiKey, userId });
 });
 
-// ── Avvio ─────────────────────────────────────────────────────────────────────
+// ── Startup ───────────────────────────────────────────────────────────────────
+iina.postMessage("getConfig", {});
 loadLibraries();
 </script>
 </body>

@@ -13,9 +13,12 @@ function getConfig() {
 
 // ── Helpers HTTP ──────────────────────────────────────────────────────────────
 async function embyGet(path, params) {
-  const cfg = getConfig();
-  const base = cfg.serverUrl.replace(/\/$/, "");
-  let url = base + path + "?api_key=" + encodeURIComponent(cfg.apiKey);
+  var conf = getConfig();
+  if (!conf.serverUrl || !conf.apiKey || !conf.userId) {
+    throw new Error("Configurazione incompleta — apri Preferenze → Plugin → Emby Browser");
+  }
+  const base = conf.serverUrl.replace(/\/$/, "");
+  let url = base + path + "?api_key=" + encodeURIComponent(conf.apiKey);
   if (params) {
     for (const k of Object.keys(params)) {
       url += "&" + encodeURIComponent(k) + "=" + encodeURIComponent(params[k]);
@@ -28,9 +31,9 @@ async function embyGet(path, params) {
 }
 
 async function embyPost(path, body) {
-  const cfg = getConfig();
-  const base = cfg.serverUrl.replace(/\/$/, "");
-  const url = base + path + "?api_key=" + encodeURIComponent(cfg.apiKey);
+  var conf = getConfig();
+  const base = conf.serverUrl.replace(/\/$/, "");
+  const url = base + path + "?api_key=" + encodeURIComponent(conf.apiKey);
   try {
     await http.post(url, JSON.stringify(body), { "Content-Type": "application/json" });
   } catch (e) {
@@ -40,37 +43,37 @@ async function embyPost(path, body) {
 
 // ── API Emby ──────────────────────────────────────────────────────────────────
 async function getLibraries() {
-  const cfg = getConfig();
-  const data = await embyGet("/Users/" + cfg.userId + "/Views");
+  var conf = getConfig();
+  const data = await embyGet("/Users/" + conf.userId + "/Views");
   return data.Items || [];
 }
 
 async function getItems(parentId, itemType) {
-  const cfg = getConfig();
+  var conf = getConfig();
   const params = {
     ParentId: parentId,
-    Fields: "Overview,RunTimeTicks,ProductionYear",
+    Fields: "Overview,RunTimeTicks,ProductionYear,ImageTags,PrimaryImageAspectRatio",
     SortBy: "SortName",
     SortOrder: "Ascending",
   };
   if (itemType) params.IncludeItemTypes = itemType;
-  const data = await embyGet("/Users/" + cfg.userId + "/Items", params);
+  const data = await embyGet("/Users/" + conf.userId + "/Items", params);
   return data.Items || [];
 }
 
 async function getEpisodes(seriesId, seasonId) {
-  const params = { SeriesId: seriesId, Fields: "Overview,RunTimeTicks" };
+  const params = { SeriesId: seriesId, Fields: "Overview,RunTimeTicks,ImageTags,PrimaryImageAspectRatio" };
   if (seasonId) params.SeasonId = seasonId;
   const data = await embyGet("/Shows/" + seriesId + "/Episodes", params);
   return data.Items || [];
 }
 
 function buildStreamUrl(itemId) {
-  const cfg = getConfig();
-  const base = cfg.serverUrl.replace(/\/$/, "");
+  var conf = getConfig();
+  const base = conf.serverUrl.replace(/\/$/, "");
   return base + "/Videos/" + itemId + "/stream"
     + "?Static=true&MediaSourceId=" + itemId
-    + "&api_key=" + encodeURIComponent(cfg.apiKey);
+    + "&api_key=" + encodeURIComponent(conf.apiKey);
 }
 
 // ── Carica la sidebar ─────────────────────────────────────────────────────────
