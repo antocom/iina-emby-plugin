@@ -251,13 +251,16 @@ let lastItems = null;
 
 function getImageUrl(item, maxH) {
   if (!embyConfig.serverUrl || !embyConfig.apiKey) return "";
-  if (!item || !item.ImageTags || !item.ImageTags.Primary) return "";
+  if (!item || !item.Id) return "";
   const base = embyConfig.serverUrl.replace(/\/$/, "");
-  return base + "/Items/" + item.Id + "/Images/Primary"
+  var url = base + "/Items/" + item.Id + "/Images/Primary"
     + "?maxHeight=" + (maxH || 400)
-    + "&tag=" + item.ImageTags.Primary
     + "&quality=90"
     + "&api_key=" + encodeURIComponent(embyConfig.apiKey);
+  if (item.ImageTags && item.ImageTags.Primary) {
+    url += "&tag=" + item.ImageTags.Primary;
+  }
+  return url;
 }
 
 // ── Navigation ────────────────────────────────────────────────────────────────
