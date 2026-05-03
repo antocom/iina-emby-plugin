@@ -13,7 +13,10 @@ function getConfig() {
 
 // ── Helpers HTTP ──────────────────────────────────────────────────────────────
 async function embyGet(path, params) {
-  const cfg = getConfig();
+  var cfg = getConfig();
+  if (!cfg.serverUrl || !cfg.apiKey || !cfg.userId) {
+    throw new Error("Configurazione incompleta — apri Preferenze → Plugin → Emby Browser");
+  }
   const base = cfg.serverUrl.replace(/\/$/, "");
   let url = base + path + "?api_key=" + encodeURIComponent(cfg.apiKey);
   if (params) {
@@ -28,7 +31,7 @@ async function embyGet(path, params) {
 }
 
 async function embyPost(path, body) {
-  const cfg = getConfig();
+  var cfg = getConfig();
   const base = cfg.serverUrl.replace(/\/$/, "");
   const url = base + path + "?api_key=" + encodeURIComponent(cfg.apiKey);
   try {
@@ -40,13 +43,13 @@ async function embyPost(path, body) {
 
 // ── API Emby ──────────────────────────────────────────────────────────────────
 async function getLibraries() {
-  const cfg = getConfig();
+  var cfg = getConfig();
   const data = await embyGet("/Users/" + cfg.userId + "/Views");
   return data.Items || [];
 }
 
 async function getItems(parentId, itemType) {
-  const cfg = getConfig();
+  var cfg = getConfig();
   const params = {
     ParentId: parentId,
     Fields: "Overview,RunTimeTicks,ProductionYear,ImageTags,PrimaryImageAspectRatio",
@@ -66,7 +69,7 @@ async function getEpisodes(seriesId, seasonId) {
 }
 
 function buildStreamUrl(itemId) {
-  const cfg = getConfig();
+  var cfg = getConfig();
   const base = cfg.serverUrl.replace(/\/$/, "");
   return base + "/Videos/" + itemId + "/stream"
     + "?Static=true&MediaSourceId=" + itemId

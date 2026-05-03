@@ -18,7 +18,7 @@ function errMsg(e) {
 }
 
 async function embyGet(path, params) {
-  const cfg = getConfig();
+  var cfg = getConfig();
   if (!cfg.serverUrl || !cfg.apiKey || !cfg.userId) {
     throw new Error("Configurazione incompleta — apri Preferenze → Plugin → Emby Browser");
   }
@@ -74,21 +74,21 @@ standaloneWindow.setFrame(600, 750);
 menu.addItem(menu.item("Apri Emby Browser", function() {
   preferences.sync();
   standaloneWindow.open();
-  const cfg = getConfig();
+  var cfg = getConfig();
   log.log("[Emby] Open — serverUrl=" + cfg.serverUrl + " userId=" + cfg.userId);
   standaloneWindow.postMessage("config", cfg);
 }));
 
 // ── Handler messaggi dalla window ─────────────────────────────────────────────
 standaloneWindow.onMessage("getLibraries", function() {
-  const cfg = getConfig();
+  var cfg = getConfig();
   embyGet("/Users/" + cfg.userId + "/Views")
     .then(function(data) { standaloneWindow.postMessage("result", { id: "libraries", items: data.Items || [] }); })
     .catch(function(e)   { standaloneWindow.postMessage("error",  { message: errMsg(e) }); });
 });
 
 standaloneWindow.onMessage("getItems", function(data) {
-  const cfg = getConfig();
+  var cfg = getConfig();
   const params = {
     ParentId: data.parentId,
     Fields: "Overview,RunTimeTicks,ProductionYear,ImageTags,PrimaryImageAspectRatio",
@@ -109,7 +109,7 @@ standaloneWindow.onMessage("getEpisodes", function(data) {
 });
 
 standaloneWindow.onMessage("play", function(data) {
-  const cfg = getConfig();
+  var cfg = getConfig();
   const base = cfg.serverUrl.replace(/\/$/, "");
 
   function randomHex(n) {
