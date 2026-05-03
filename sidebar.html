@@ -269,7 +269,7 @@ function showLoading() {
 }
 function showError(msg) {
   document.getElementById("content").innerHTML =
-    `<div class="state-box error-msg"><span>⚠ ${msg}</span></div>`;
+    `<div class="state-box error-msg"><span>⚠ ${msg}</span><br><small style="color:#6e6e82;margin-top:8px">v2.0.3</small></div>`;
 }
 function fmtDuration(ticks) {
   if (!ticks) return "";
