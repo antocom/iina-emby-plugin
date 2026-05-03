@@ -49,7 +49,7 @@ async function getItems(parentId, itemType) {
   const cfg = getConfig();
   const params = {
     ParentId: parentId,
-    Fields: "Overview,RunTimeTicks,ProductionYear",
+    Fields: "Overview,RunTimeTicks,ProductionYear,ImageTags,PrimaryImageAspectRatio",
     SortBy: "SortName",
     SortOrder: "Ascending",
   };
@@ -59,7 +59,7 @@ async function getItems(parentId, itemType) {
 }
 
 async function getEpisodes(seriesId, seasonId) {
-  const params = { SeriesId: seriesId, Fields: "Overview,RunTimeTicks" };
+  const params = { SeriesId: seriesId, Fields: "Overview,RunTimeTicks,ImageTags,PrimaryImageAspectRatio" };
   if (seasonId) params.SeasonId = seasonId;
   const data = await embyGet("/Shows/" + seriesId + "/Episodes", params);
   return data.Items || [];

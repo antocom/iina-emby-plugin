@@ -69,7 +69,7 @@ async function embyGet(path, params) {
 // ── Standalone Window ─────────────────────────────────────────────────────────
 standaloneWindow.loadFile("window.html");
 standaloneWindow.setProperty({ title: "Emby Browser", resizable: true });
-standaloneWindow.setFrame(380, 600);
+standaloneWindow.setFrame(600, 750);
 
 menu.addItem(menu.item("Apri Emby Browser", function() {
   preferences.sync();
@@ -91,7 +91,7 @@ standaloneWindow.onMessage("getItems", function(data) {
   const cfg = getConfig();
   const params = {
     ParentId: data.parentId,
-    Fields: "Overview,RunTimeTicks,ProductionYear",
+    Fields: "Overview,RunTimeTicks,ProductionYear,ImageTags,PrimaryImageAspectRatio",
     SortBy: "SortName", SortOrder: "Ascending"
   };
   if (data.itemType) params.IncludeItemTypes = data.itemType;
@@ -101,7 +101,7 @@ standaloneWindow.onMessage("getItems", function(data) {
 });
 
 standaloneWindow.onMessage("getEpisodes", function(data) {
-  const params = { SeriesId: data.seriesId, Fields: "Overview,RunTimeTicks" };
+  const params = { SeriesId: data.seriesId, Fields: "Overview,RunTimeTicks,ImageTags,PrimaryImageAspectRatio" };
   if (data.seasonId) params.SeasonId = data.seasonId;
   embyGet("/Shows/" + data.seriesId + "/Episodes", params)
     .then(function(res) { standaloneWindow.postMessage("result", { id: "items", items: res.Items || [] }); })
