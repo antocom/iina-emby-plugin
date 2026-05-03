@@ -18,12 +18,12 @@ function errMsg(e) {
 }
 
 async function embyGet(path, params) {
-  var cfg = getConfig();
-  if (!cfg.serverUrl || !cfg.apiKey || !cfg.userId) {
+  var conf = getConfig();
+  if (!conf.serverUrl || !conf.apiKey || !conf.userId) {
     throw new Error("Configurazione incompleta — apri Preferenze → Plugin → Emby Browser");
   }
-  const base = cfg.serverUrl.replace(/\/$/, "");
-  let url = base + path + "?api_key=" + cfg.apiKey;
+  const base = conf.serverUrl.replace(/\/$/, "");
+  let url = base + path + "?api_key=" + conf.apiKey;
   if (params) {
     for (const k of Object.keys(params)) {
       if (params[k] !== null && params[k] !== undefined && params[k] !== "") {
@@ -74,28 +74,28 @@ standaloneWindow.setFrame(600, 750);
 menu.addItem(menu.item("Apri Emby Browser", function() {
   preferences.sync();
   standaloneWindow.open();
-  var cfg = getConfig();
-  log.log("[Emby] Open — serverUrl=" + cfg.serverUrl + " userId=" + cfg.userId);
-  standaloneWindow.postMessage("config", cfg);
+  var conf = getConfig();
+  log.log("[Emby] Open — serverUrl=" + conf.serverUrl + " userId=" + conf.userId);
+  standaloneWindow.postMessage("config", conf);
 }));
 
 // ── Handler messaggi dalla window ─────────────────────────────────────────────
 standaloneWindow.onMessage("getLibraries", function() {
-  var cfg = getConfig();
-  embyGet("/Users/" + cfg.userId + "/Views")
+  var conf = getConfig();
+  embyGet("/Users/" + conf.userId + "/Views")
     .then(function(data) { standaloneWindow.postMessage("result", { id: "libraries", items: data.Items || [] }); })
     .catch(function(e)   { standaloneWindow.postMessage("error",  { message: errMsg(e) }); });
 });
 
 standaloneWindow.onMessage("getItems", function(data) {
-  var cfg = getConfig();
+  var conf = getConfig();
   const params = {
     ParentId: data.parentId,
     Fields: "Overview,RunTimeTicks,ProductionYear,ImageTags,PrimaryImageAspectRatio",
     SortBy: "SortName", SortOrder: "Ascending"
   };
   if (data.itemType) params.IncludeItemTypes = data.itemType;
-  embyGet("/Users/" + cfg.userId + "/Items", params)
+  embyGet("/Users/" + conf.userId + "/Items", params)
     .then(function(res) { standaloneWindow.postMessage("result", { id: "items", items: res.Items || [] }); })
     .catch(function(e)  { standaloneWindow.postMessage("error",  { message: errMsg(e) }); });
 });
@@ -109,8 +109,8 @@ standaloneWindow.onMessage("getEpisodes", function(data) {
 });
 
 standaloneWindow.onMessage("play", function(data) {
-  var cfg = getConfig();
-  const base = cfg.serverUrl.replace(/\/$/, "");
+  var conf = getConfig();
+  const base = conf.serverUrl.replace(/\/$/, "");
 
   function randomHex(n) {
     var s = "", hex = "0123456789abcdef";
@@ -121,18 +121,18 @@ standaloneWindow.onMessage("play", function(data) {
   var deviceId = "iina-emby-plugin";
 
   // Prima chiama PlaybackInfo per ottenere il vero MediaSourceId e Container
-  embyGet("/Items/" + data.itemId + "/PlaybackInfo", { UserId: cfg.userId })
+  embyGet("/Items/" + data.itemId + "/PlaybackInfo", { UserId: conf.userId })
     .then(function(info) {
       var ms = (info.MediaSources && info.MediaSources[0]) || {};
       var mediaSourceId = ms.Id || data.itemId;
       var container = ms.Container || "mkv";
 
       var streamUrl = base + "/Videos/" + data.itemId + "/stream"
-        + "?api_key=" + cfg.apiKey
+        + "?api_key=" + conf.apiKey
         + "&Static=true"
         + "&MediaSourceId=" + mediaSourceId
         + "&DeviceId=" + deviceId
-        + "&UserId=" + cfg.userId
+        + "&UserId=" + conf.userId
         + "&PlaySessionId=" + playSessionId
         + "&Container=" + container;
 
